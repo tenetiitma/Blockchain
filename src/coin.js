@@ -1,17 +1,22 @@
-const API_KEY = "7cc19a1227msh8862e54e13083fcp1225f4jsn963fce01679c";
-const BASE_URL = "https://coinranking1.p.rapidapi.com";
+import { getCoins, getCoin, getHistory } from "../api/coinService.js";
 
-fetch(`${BASE_URL}/coins`, {
-    headers: {
-        'X-RapidAPI-Key': API_KEY,
-        'X-RapidAPI-Host': 'coinranking1.p.rapidapi.com' },
-}).then(response => response.json()).then(data => {
+const data = await getCoins();
+
     const marketTrendsWrapper = document.getElementById('market_trends');
 
     data.data.coins.forEach((coin) => {
+        
         const article = document.createElement('article');
 
-        const articleClasses = ["border-2", "p-4", "border-[#73FDAA]", "rounded-2xl",];
+        article.setAttribute("data-uuid", coin.uuid);
+
+        const articleClasses = ["border-2", "p-4", "rounded-2xl"];
+        const borderColorsWeDontWant = ["#000000", "#00042b"];
+
+        // shorthand "if" - 
+        //      Kui on true, siis "?" millele järgneb tegevus
+        //      Kui on false, siis ":" millele järgneb tegevus
+        article.style.borderColor = borderColorsWeDontWant.includes(coin.color) ? "#73FDAA" : coin.color;
 
         article.classList.add(...articleClasses);
 
@@ -26,10 +31,23 @@ fetch(`${BASE_URL}/coins`, {
             </div>
             <div class="grid gap-2 px-6 pt-6 pb-2">
                 <p class="text-2xl">$${Number(coin.price).toFixed(2)}</p>
-                <p>${coin.change}</p>
+                <p class="${String(coin.change).startsWith('-') ? 'text-red-500' : 'text-green-500'}">${coin.change}</p>
             </div>
         `;
 
         marketTrendsWrapper.append(article);
-    });
-}).catch((error) => console.error(error));
+});
+
+const cards = document.querySelectorAll("#market_trends article");
+cards.forEach((node) => {
+    node.addEventListener('click', async (event) => {
+        const uuid = event.currentTarget.getAttribute('data-uuid');
+
+        const response = await getCoin(uuid); 
+        const history = await getHistory(uuid);
+
+        const result = {...response.data.coin, ...history.data};
+        
+        console.log(result);
+    })
+});
